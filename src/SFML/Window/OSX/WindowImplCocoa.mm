@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 //
 // SFML - Simple and Fast Multimedia Library
-// Copyright (C) 2007-2014 Marco Antognini (antognini.marco@gmail.com),
-//                         Laurent Gomila (laurent.gom@gmail.com),
+// Copyright (C) 2007-2015 Marco Antognini (antognini.marco@gmail.com),
+//                         Laurent Gomila (laurent@sfml-dev.org)
 //
 // This software is provided 'as-is', without any express or implied warranty.
 // In no event will the authors be held liable for any damages arising from the use of this software.
@@ -267,7 +267,7 @@ void WindowImplCocoa::setUpProcess(void)
 
         // Tell the application to stop bouncing in the Dock.
         [[SFApplication sharedApplication] finishLaunching];
-        // NOTE : This last call won't harm anything even if SFML window was
+        // NOTE: This last call won't harm anything even if SFML window was
         // created with an external handle.
     }
 }
@@ -370,15 +370,31 @@ void WindowImplCocoa::mouseMovedAt(int x, int y)
 }
 
 ////////////////////////////////////////////////////////////
-void WindowImplCocoa::mouseWheelScrolledAt(float delta, int x, int y)
+void WindowImplCocoa::mouseWheelScrolledAt(float deltaX, float deltaY, int x, int y)
 {
     Event event;
+
     event.type = Event::MouseWheelMoved;
-    event.mouseWheel.delta = delta;
+    event.mouseWheel.delta = deltaY;
     event.mouseWheel.x = x;
     event.mouseWheel.y = y;
     scaleOutXY(event.mouseWheel, m_delegate);
+    pushEvent(event);
 
+    event.type = Event::MouseWheelScrolled;
+    event.mouseWheelScroll.wheel = Mouse::VerticalWheel;
+    event.mouseWheelScroll.delta = deltaY;
+    event.mouseWheelScroll.x = x;
+    event.mouseWheelScroll.y = y;
+    scaleOutXY(event.mouseWheelScroll, m_delegate);
+    pushEvent(event);
+
+    event.type = Event::MouseWheelScrolled;
+    event.mouseWheelScroll.wheel = Mouse::HorizontalWheel;
+    event.mouseWheelScroll.delta = deltaX;
+    event.mouseWheelScroll.x = x;
+    event.mouseWheelScroll.y = y;
+    scaleOutXY(event.mouseWheelScroll, m_delegate);
     pushEvent(event);
 }
 
@@ -549,6 +565,20 @@ void WindowImplCocoa::setKeyRepeatEnabled(bool enabled)
         [m_delegate enableKeyRepeat];
     else
         [m_delegate disableKeyRepeat];
+}
+
+
+////////////////////////////////////////////////////////////
+void WindowImplCocoa::requestFocus()
+{
+    [m_delegate requestFocus];
+}
+
+
+////////////////////////////////////////////////////////////
+bool WindowImplCocoa::hasFocus() const
+{
+    return [m_delegate hasFocus];
 }
 
 
