@@ -1,3 +1,26 @@
+SFML 2.3.1
+==========
+
+Also available on the website: http://www.sfml-dev.org/changelog.php#sfml-2.3.1
+
+General
+=======
+
+Window
+======
+
+Bugfixes
+--------
+* [Android] Ensured the window still exists before accessing the dimensions on it (#854)
+* [Android] Added API level check (#856)
+
+Audio
+=====
+
+Bugfixes
+--------
+* [Android] Fixed audio files not loading (#855, #887)
+
 SFML 2.3
 ========
 
