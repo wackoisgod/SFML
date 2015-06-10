@@ -351,6 +351,18 @@ public :
     void update(const Window& window, unsigned int x, unsigned int y);
 
     ////////////////////////////////////////////////////////////
+    /// \brief Update the texture from a part of the image
+    ///
+    /// This function does nothing if the texture was not
+    /// previously created.
+    ///
+    /// \param image Image to copy to the texture
+    /// \param area  Area of the image to copy to the texture
+    ///
+    ////////////////////////////////////////////////////////////
+    void update(const Image& image, const sf::IntRect& area);
+
+    ////////////////////////////////////////////////////////////
     /// \brief Enable or disable the smooth filter
     ///
     /// When the filter is activated, the texture appears smoother
