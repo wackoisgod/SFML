@@ -47,7 +47,7 @@ namespace priv
 ////////////////////////////////////////////////////////////
 class JoystickImpl
 {
-public:
+public :
 
     ////////////////////////////////////////////////////////////
     /// \brief Perform the global initialization of the joystick module
@@ -111,7 +111,7 @@ public:
     ////////////////////////////////////////////////////////////
     JoystickState update();
 
-private:
+private :
 
     ////////////////////////////////////////////////////////////
     // Member data
@@ -121,6 +121,7 @@ private:
     typedef std::vector<IOHIDElementRef>                  ButtonsVector;
 
     AxisMap                  m_axis;           ///< Axis (IOHIDElementRef) connected to the joystick
+    ButtonsVector            m_hats;           ///< Hats (IOHIDElementRef) connected to the joystick
     ButtonsVector            m_buttons;        ///< Buttons (IOHIDElementRef) connected to the joystick
     unsigned int             m_index;          ///< SFML index
     Joystick::Identification m_identification; ///< Joystick identification
