@@ -471,6 +471,36 @@ void Texture::update(const Window& window, unsigned int x, unsigned int y)
     }
 }
 
+////////////////////////////////////////////////////////////
+void Texture::update(const Image& image, const sf::IntRect& area)
+{
+    // Retrieve the image size
+    int width = static_cast<int>(image.getSize().x);
+    int height = static_cast<int>(image.getSize().y);
+
+    IntRect rectangle = area;
+    if (rectangle.left   < 0) rectangle.left = 0;
+    if (rectangle.top    < 0) rectangle.top  = 0;
+    if (rectangle.left + rectangle.width > width)  rectangle.width  = width - rectangle.left;
+    if (rectangle.top + rectangle.height > height) rectangle.height = height - rectangle.top;
+
+    // Make sure that the current texture binding will be preserved
+    priv::TextureSaver save;
+
+    // Copy the pixels to the texture, row by row
+    const Uint8* pixels = image.getPixelsPtr() + 4 * (rectangle.left + (width * rectangle.top));
+    glCheck(glBindTexture(GL_TEXTURE_2D, m_texture));
+    for (int i = 0; i < rectangle.height; ++i)
+    {
+        glCheck(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, rectangle.width, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
+        pixels += 4 * width;
+    }
+
+    // Force an OpenGL flush, so that the texture will appear updated
+    // in all contexts immediately (solves problems in multi-threaded apps)
+    glCheck(glFlush());
+}
+
 
 ////////////////////////////////////////////////////////////
 void Texture::setSmooth(bool smooth)
