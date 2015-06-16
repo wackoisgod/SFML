@@ -246,6 +246,7 @@ bool JoystickImpl::open(unsigned int index)
         IOHIDElementRef element = (IOHIDElementRef) CFArrayGetValueAtIndex(elements, i);
         switch (IOHIDElementGetType(element))
         {
+            case kIOHIDElementTypeInput_Axis:
             case kIOHIDElementTypeInput_Misc:
                 switch (IOHIDElementGetUsage(element))
                 {
@@ -255,6 +256,7 @@ bool JoystickImpl::open(unsigned int index)
                     case kHIDUsage_GD_Rx: m_axis[Joystick::U] = element; break;
                     case kHIDUsage_GD_Ry: m_axis[Joystick::V] = element; break;
                     case kHIDUsage_GD_Rz: m_axis[Joystick::R] = element; break;
+                    case kHIDUsage_GD_Hatswitch: m_hats.push_back(element); break;
                     default: break;
                     // kHIDUsage_GD_Vx, kHIDUsage_GD_Vy, kHIDUsage_GD_Vz are ignored.
                 }
@@ -274,12 +276,15 @@ bool JoystickImpl::open(unsigned int index)
     // Ensure that the buttons will be indexed in the same order as their
     // HID Usage (assigned by manufacturer and/or a driver).
     std::sort(m_buttons.begin(), m_buttons.end(), JoystickButtonSortPredicate);
+    std::sort(m_hats.begin(), m_hats.end(), JoystickButtonSortPredicate);
 
     // Note: Joy::AxisPovX/Y are not supported (yet).
     // Maybe kIOHIDElementTypeInput_Axis is the corresponding type but I can't test.
 
     // Retain all these objects for personal use
     for (ButtonsVector::iterator it(m_buttons.begin()); it != m_buttons.end(); ++it)
+        CFRetain(*it);
+    for (ButtonsVector::iterator it(m_hats.begin()); it != m_hats.end(); ++it)
         CFRetain(*it);
     for (AxisMap::iterator it(m_axis.begin()); it != m_axis.end(); ++it)
         CFRetain(it->second);
@@ -306,6 +311,10 @@ void JoystickImpl::close()
         CFRelease(it->second);
     m_axis.clear();
 
+    for (ButtonsVector::iterator it(m_hats.begin()); it != m_hats.end(); ++it)
+        CFRelease(*it);
+    m_hats.clear();
+
     // And we unregister this joystick
     m_locationIDs[m_index] = 0;
 }
@@ -322,6 +331,11 @@ JoystickCaps JoystickImpl::getCapabilities() const
     // Axis:
     for (AxisMap::const_iterator it(m_axis.begin()); it != m_axis.end(); ++it) {
         caps.axes[it->first] = true;
+    }
+
+    if (m_hats.size() > 0) {
+        caps.axes[Joystick::PovX] = true;
+        caps.axes[Joystick::PovY] = true;
     }
 
     return caps;
@@ -393,6 +407,60 @@ JoystickState JoystickImpl::update()
 
         // 1 means pressed, others mean released
         state.buttons[i] = IOHIDValueGetIntegerValue(value) == 1;
+    }
+
+    // Update hatswitch's state
+    for (ButtonsVector::iterator it(m_hats.begin()); it != m_hats.end(); ++it, ++i)
+    {
+        IOHIDValueRef value = 0;
+        IOHIDDeviceGetValue(IOHIDElementGetDevice(*it), *it, &value);
+
+        // Check for plug out.
+        if (!value)
+        {
+            // No value? Hum... Seems like the joystick is gone
+            return disconnectedState;
+        }
+
+        int hatValue = IOHIDValueGetIntegerValue(value);
+        int min = IOHIDElementGetLogicalMin(*it);
+        int max = IOHIDElementGetLogicalMax(*it);
+        int range = max - min + 1;
+        if (range == 4) {
+            hatValue *= 2;
+        } else if (range != 8) {
+            hatValue = -1;
+        }
+        switch (hatValue) {
+            case 0:
+                state.axes[Joystick::PovY] = 100;
+                break;
+            case 1:
+                state.axes[Joystick::PovX] = 100;
+                state.axes[Joystick::PovY] = 100;
+                break;
+            case 2:
+                state.axes[Joystick::PovX] = 100;
+                break;
+            case 3:
+                state.axes[Joystick::PovX] = 100;
+                state.axes[Joystick::PovY] = -100;
+                break;
+            case 4:
+                state.axes[Joystick::PovY] = -100;
+                break;
+            case 5:
+                state.axes[Joystick::PovX] = -100;
+                state.axes[Joystick::PovY] = -100;
+                break;
+            case 6:
+                state.axes[Joystick::PovX] = -100;
+                break;
+            case 7:
+                state.axes[Joystick::PovX] = -100;
+                state.axes[Joystick::PovY] = 100;
+                break;
+        }
     }
 
     // Update axes' state
