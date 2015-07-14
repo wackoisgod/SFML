@@ -279,6 +279,12 @@ void RenderTarget::draw(const Vertex* vertices, unsigned int vertexCount,
         // Draw the primitives
         glCheck(glDrawArrays(mode, 0, vertexCount));
 
+        // If the texture we used to draw belonged to a RenderTexture, then forcibly unbind the texture.
+        // This prevents a bug where some drivers do not clear RenderTextures properly.
+        if (states.texture && states.texture->m_fboAttachment) {
+            applyTexture(NULL);
+        }
+
         // Unbind the shader, if any
         if (states.shader)
             applyShader(NULL);
