@@ -494,6 +494,7 @@ public :
 
 private :
 
+    friend class FBOTargetImpl;
     friend class RenderTexture;
     friend class RenderTarget;
 
