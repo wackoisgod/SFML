@@ -9,6 +9,8 @@ set(SRC
     ${SRCROOT}/Color.cpp
     ${INCROOT}/Color.hpp
     ${INCROOT}/Export.hpp
+    ${SRCROOT}/FBOTargetImpl.cpp
+    ${INCROOT}/FBOTargetImpl.hpp
     ${SRCROOT}/Font.cpp
     ${INCROOT}/Font.hpp
     ${SRCROOT}/Glsl.cpp
@@ -77,6 +79,8 @@ source_group("drawables" FILES ${DRAWABLES_SRC})
 
 # render-texture sources
 set(RENDER_TEXTURE_SRC
+    ${SRCROOT}/FBOTargetImpl.cpp
+    ${INCROOT}/FBOTargetImpl.hpp
     ${SRCROOT}/RenderTextureImpl.cpp
     ${SRCROOT}/RenderTextureImpl.hpp
     ${SRCROOT}/RenderTextureImplFBO.cpp
