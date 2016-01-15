@@ -5,7 +5,7 @@
 namespace sf
 {
 
-    sf::RenderWindow* FBOTargetImpl::sContextOwner = nullptr;
+    sf::RenderWindow* FBOTargetImpl::sContextOwner = NULL;
 
     FBOTargetImpl::FBOTargetImpl() :mFbo(0), mTex(0){
 
@@ -26,7 +26,7 @@ namespace sf
 
     // Create the FBOTarget
     bool FBOTargetImpl::create(unsigned int w, unsigned int h){
-        if (sContextOwner == nullptr) return false;
+        if (sContextOwner == NULL) return false;
 
         // TODO: Fallback to sf::RenderTexture if we can't make FBOs
 
