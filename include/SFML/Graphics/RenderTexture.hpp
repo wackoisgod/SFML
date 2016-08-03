@@ -83,7 +83,7 @@ public:
     /// \return True if creation has been successful
     ///
     ////////////////////////////////////////////////////////////
-    bool create(unsigned int width, unsigned int height, bool depthBuffer = false);
+    virtual bool create(unsigned int width, unsigned int height, bool depthBuffer = false);
 
     ////////////////////////////////////////////////////////////
     /// \brief Enable or disable texture smoothing
@@ -96,7 +96,7 @@ public:
     /// \see isSmooth
     ///
     ////////////////////////////////////////////////////////////
-    void setSmooth(bool smooth);
+    virtual void setSmooth(bool smooth);
 
     ////////////////////////////////////////////////////////////
     /// \brief Tell whether the smooth filtering is enabled or not
@@ -162,7 +162,7 @@ public:
     /// \return True if operation was successful, false otherwise
     ///
     ////////////////////////////////////////////////////////////
-    bool setActive(bool active = true);
+    virtual bool setActive(bool active = true);
 
     ////////////////////////////////////////////////////////////
     /// \brief Update the contents of the target texture
@@ -173,7 +173,7 @@ public:
     /// it may leave the texture in an undefined state.
     ///
     ////////////////////////////////////////////////////////////
-    void display();
+    virtual void display();
 
     ////////////////////////////////////////////////////////////
     /// \brief Return the size of the rendering region of the texture
@@ -200,7 +200,7 @@ public:
     /// \return Const reference to the texture
     ///
     ////////////////////////////////////////////////////////////
-    const Texture& getTexture() const;
+    virtual const Texture& getTexture() const;
 
 private:
 

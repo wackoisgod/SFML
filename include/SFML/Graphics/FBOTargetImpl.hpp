@@ -1,7 +1,7 @@
 #ifndef SFML_FBOTARGETIMPL_HPP
 #define SFML_FBOTARGETIMPL_HPP
 
-#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
@@ -9,34 +9,34 @@ namespace sf {
     // A single-context Framebuffer render target
     // A lighter version of sf::RenderTexture
     // NB: MUST call SetContextOwner before create()
-    class SFML_GRAPHICS_API FBOTargetImpl : public sf::RenderTarget {
+    class SFML_GRAPHICS_API FBOTargetImpl : public sf::RenderTexture {
     public:
         FBOTargetImpl();
         virtual ~FBOTargetImpl();
 
         // Set the context for FBOs to be created on
         // Must call this before any create(...) calls will work
-        static void SetContextOwner(sf::RenderWindow* window);
+        static void SetContextOwner(RenderWindow* window);
 
         // Create the FBOTarget
-        bool create(unsigned int w, unsigned int h);
+        virtual bool create(unsigned int width, unsigned int height, bool depthBuffer = false);
 
-        bool setActive(bool active = true);
-        void display();
-        virtual sf::Vector2u getSize() const;
-        const sf::Texture& getTexture() const;
+        virtual bool setActive(bool active = true);
+        virtual void display();
+        virtual Vector2u getSize() const;
+        virtual const Texture& getTexture() const;
 
-        void setSmooth(bool smooth);
+        virtual void setSmooth(bool smooth);
 
     private:
         virtual bool activate(bool active);
 
         // Shared context
-        static sf::RenderWindow* sContextOwner;
+        static RenderWindow* sContextOwner;
 
         // Internals
         unsigned int mFbo; // FBO id
-        sf::Texture mTexture; // Target texture to draw on
+        Texture mTexture; // Target texture to draw on
         unsigned int mTex;
     };
 
