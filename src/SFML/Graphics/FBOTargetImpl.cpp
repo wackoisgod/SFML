@@ -20,12 +20,12 @@ namespace sf
 
     // Set the context for FBOs to be created on
     // Must call this before any create(...) calls will work
-    void FBOTargetImpl::SetContextOwner(sf::RenderWindow* window){
+    void FBOTargetImpl::SetContextOwner(RenderWindow* window){
         sContextOwner = window;
     }
 
     // Create the FBOTarget
-    bool FBOTargetImpl::create(unsigned int w, unsigned int h){
+    bool FBOTargetImpl::create(unsigned int width, unsigned int height, bool depthBuffer /* = false */) {
         if (sContextOwner == NULL) return false;
 
         // TODO: Fallback to sf::RenderTexture if we can't make FBOs
@@ -33,7 +33,7 @@ namespace sf
         // Create the objects using the shared context		
         sContextOwner->setActive(true);
 
-        if (!mTexture.create(w, h)){
+        if (!mTexture.create(width, height)){
             err() << "Couldn't create texture";
             return false;
         }
@@ -72,7 +72,7 @@ namespace sf
         return true;
     }
 
-    bool FBOTargetImpl::setActive(bool active){		
+    bool FBOTargetImpl::setActive(bool active) {
         bool res = sContextOwner->setActive(true);
         if (active) {
             GLint currentFbo;
@@ -89,19 +89,19 @@ namespace sf
         return true;
     }
 
-    void FBOTargetImpl::display(){
-        if (setActive(true)){			
+    void FBOTargetImpl::display() {
+        if (setActive(true)) {
             glFlush();
             mTexture.m_pixelsFlipped = true;
         }
     }
 
-    sf::Vector2u FBOTargetImpl::getSize() const {
+    Vector2u FBOTargetImpl::getSize() const {
         // NB: getSize() is called in initialise to setup the default viewport
         return mTexture.getSize();
     };
 
-    const sf::Texture& FBOTargetImpl::getTexture() const {
+    const Texture& FBOTargetImpl::getTexture() const {
         return mTexture;
     }
 
