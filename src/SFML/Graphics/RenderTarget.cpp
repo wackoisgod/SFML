@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////
 //
 // SFML - Simple and Fast Multimedia Library
-// Copyright (C) 2007-2016 Laurent Gomila (laurent@sfml-dev.org)
+// Copyright (C) 2007-2017 Laurent Gomila (laurent@sfml-dev.org)
 //
 // This software is provided 'as-is', without any express or implied warranty.
 // In no event will the authors be held liable for any damages arising from the use of this software.
@@ -269,13 +269,25 @@ void RenderTarget::draw(const Vertex* vertices, std::size_t vertexCount,
                 vertices = NULL;
         }
 
+        // Check if texture coordinates array is needed, and update client state accordingly
+        bool enableTexCoordsArray = (states.texture || states.shader);
+        if (enableTexCoordsArray != m_cache.texCoordsArrayEnabled)
+        {
+            if (enableTexCoordsArray)
+                glCheck(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+            else
+                glCheck(glDisableClientState(GL_TEXTURE_COORD_ARRAY));
+            m_cache.texCoordsArrayEnabled = enableTexCoordsArray;
+        }
+
         // Setup the pointers to the vertices' components
         if (vertices)
         {
             const char* data = reinterpret_cast<const char*>(vertices);
             glCheck(glVertexPointer(2, GL_FLOAT, sizeof(Vertex), data + 0));
             glCheck(glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), data + 8));
-            glCheck(glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), data + 12));
+            if (enableTexCoordsArray)
+                glCheck(glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), data + 12));
         }
 
         // Find the OpenGL primitive type
@@ -389,6 +401,8 @@ void RenderTarget::resetGLStates()
         applyTexture(NULL);
         if (shaderAvailable)
             applyShader(NULL);
+
+        m_cache.texCoordsArrayEnabled = true;
 
         m_cache.useVertexCache = false;
 
