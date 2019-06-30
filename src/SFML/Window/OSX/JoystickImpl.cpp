@@ -246,7 +246,6 @@ bool JoystickImpl::open(unsigned int index)
         IOHIDElementRef element = (IOHIDElementRef) CFArrayGetValueAtIndex(elements, i);
         switch (IOHIDElementGetType(element))
         {
-            case kIOHIDElementTypeInput_Axis:
             case kIOHIDElementTypeInput_Misc:
                 switch (IOHIDElementGetUsage(element))
                 {
@@ -256,8 +255,54 @@ bool JoystickImpl::open(unsigned int index)
                     case kHIDUsage_GD_Rx: m_axis[Joystick::U] = element; break;
                     case kHIDUsage_GD_Ry: m_axis[Joystick::V] = element; break;
                     case kHIDUsage_GD_Rz: m_axis[Joystick::R] = element; break;
-                    case kHIDUsage_GD_Hatswitch: m_hats.push_back(element); break;
-                    // kHIDUsage_GD_Vx, kHIDUsage_GD_Vy, kHIDUsage_GD_Vz are ignored.
+
+                    case kHIDUsage_GD_Hatswitch:
+                        // From §4.3 MiscellaneousControls of HUT v1.12:
+                        //
+                        // > Hat Switch:
+                        // >   A typical example is four switches that are capable of generating
+                        // >   information about four possible directions in which the knob can be
+                        // >   tilted. Intermediate positions can also be decoded if the hardware
+                        // >   allows two switches to be reported simultaneously.
+                        //
+                        // We assume this model here as well. Hence, with 4 switches and intermediate
+                        // positions we have 8 values (0-7) plus the "null" state (8).
+                        {
+                            CFIndex min = IOHIDElementGetLogicalMin(element);
+                            CFIndex max = IOHIDElementGetLogicalMax(element);
+
+                            if (min != 0 || max != 7)
+                            {
+                                sf::err() << std::hex
+                                          << "Joystick (vendor/product id: 0x" << m_identification.vendorId
+                                          << "/0x" << m_identification.productId << std::dec
+                                          << ") range is an unexpected one: [" << min << ", " << max << "]"
+                                          << std::endl;
+                            }
+                            else
+                            {
+                                m_hat = element;
+                            }
+                        }
+                        break;
+
+                    case kHIDUsage_GD_GamePad:
+                        // We assume a game pad is an application collection, meaning it doesn't hold
+                        // any values per say. They kind of "emit" the joystick's usages.
+                        // See §3.4.3 Usage Types (Collection) of HUT v1.12
+                        if (IOHIDElementGetCollectionType(element) != kIOHIDElementCollectionTypeApplication)
+                        {
+                            sf::err() << std::hex << "Gamepage (vendor/product id: 0x" << m_identification.vendorId
+                                      << "/0x" << m_identification.productId << ") is not an CA but a 0x"
+                                      << IOHIDElementGetCollectionType(element) << std::dec << std::endl;
+                        }
+                        break;
+
+                    default:
+#ifdef SFML_DEBUG
+                        sf::err() << "Unexpected usage for element of Page Generic Desktop: 0x" << std::hex << IOHIDElementGetUsage(element) << std::dec << std::endl;
+#endif
+                        break;
                 }
                 break;
 
@@ -275,7 +320,6 @@ bool JoystickImpl::open(unsigned int index)
     // Ensure that the buttons will be indexed in the same order as their
     // HID Usage (assigned by manufacturer and/or a driver).
     std::sort(m_buttons.begin(), m_buttons.end(), JoystickButtonSortPredicate);
-    std::sort(m_hats.begin(), m_hats.end(), JoystickButtonSortPredicate);
 
     // Note : Joy::AxisPovX/Y are not supported (yet).
     // Maybe kIOHIDElementTypeInput_Axis is the corresponding type but I can't test.
@@ -283,12 +327,10 @@ bool JoystickImpl::open(unsigned int index)
     // Retain all these objects for personal use
     for (ButtonsVector::iterator it(m_buttons.begin()); it != m_buttons.end(); ++it)
         CFRetain(*it);
-    for (ButtonsVector::iterator it(m_hats.begin()); it != m_hats.end(); ++it)
-        CFRetain(*it);
     for (AxisMap::iterator it(m_axis.begin()); it != m_axis.end(); ++it)
         CFRetain(it->second);
 
-    // Note : we didn't retain element in the switch because we might have multiple
+    // Note: we didn't retain element in the switch because we might have multiple
     // Axis X (for example) and we want to keep only the last one. So to prevent
     // leaking we retain objects 'only' now.
 
@@ -310,9 +352,9 @@ void JoystickImpl::close()
         CFRelease(it->second);
     m_axis.clear();
 
-    for (ButtonsVector::iterator it(m_hats.begin()); it != m_hats.end(); ++it)
-        CFRelease(*it);
-    m_hats.clear();
+    if (m_hat != NULL)
+        CFRelease(m_hat);
+    m_hat = NULL;
 
     // And we unregister this joystick
     m_locationIDs[m_index] = 0;
@@ -330,11 +372,6 @@ JoystickCaps JoystickImpl::getCapabilities() const
     // Axis:
     for (AxisMap::const_iterator it(m_axis.begin()); it != m_axis.end(); ++it) {
         caps.axes[it->first] = true;
-    }
-
-    if (m_hats.size() > 0) {
-        caps.axes[Joystick::PovX] = true;
-        caps.axes[Joystick::PovY] = true;
     }
 
     return caps;
@@ -408,60 +445,6 @@ JoystickState JoystickImpl::update()
         state.buttons[i] = IOHIDValueGetIntegerValue(value) == 1;
     }
 
-    // Update hatswitch's state
-    for (ButtonsVector::iterator it(m_hats.begin()); it != m_hats.end(); ++it, ++i)
-    {
-        IOHIDValueRef value = 0;
-        IOHIDDeviceGetValue(IOHIDElementGetDevice(*it), *it, &value);
-
-        // Check for plug out.
-        if (!value)
-        {
-            // No value? Hum... Seems like the joystick is gone
-            return disconnectedState;
-        }
-    
-        int hatValue = IOHIDValueGetIntegerValue(value);
-        int min = IOHIDElementGetLogicalMin(*it);
-        int max = IOHIDElementGetLogicalMax(*it);
-        int range = max - min + 1;
-        if (range == 4) {
-            hatValue *= 2;
-        } else if (range != 8) {
-            hatValue = -1;
-        }
-        switch (hatValue) {
-            case 0:
-                state.axes[Joystick::PovY] = 100;
-                break;
-            case 1:
-                state.axes[Joystick::PovX] = 100;
-                state.axes[Joystick::PovY] = 100;
-                break;
-            case 2:
-                state.axes[Joystick::PovX] = 100;
-                break;
-            case 3:
-                state.axes[Joystick::PovX] = 100;
-                state.axes[Joystick::PovY] = -100;
-                break;
-            case 4:
-                state.axes[Joystick::PovY] = -100;
-                break;
-            case 5:
-                state.axes[Joystick::PovX] = -100;
-                state.axes[Joystick::PovY] = -100;
-                break;
-            case 6:
-                state.axes[Joystick::PovX] = -100;
-                break;
-            case 7:
-                state.axes[Joystick::PovX] = -100;
-                state.axes[Joystick::PovY] = 100;
-                break;
-        }
-    }
-
     // Update axes' state
     for (AxisMap::iterator it = m_axis.begin(); it != m_axis.end(); ++it)
     {
@@ -479,7 +462,7 @@ JoystickState JoystickImpl::update()
         //
         // General formula to bind [a,b] to [c,d] with a linear progression:
         //
-        // f : [a, b] -> [c, d]
+        // f: [a, b] -> [c, d]
         //        x  |->  (x-a)(d-c)/(b-a)+c
         //
         // This method might not be very accurate (the "0 position" can be

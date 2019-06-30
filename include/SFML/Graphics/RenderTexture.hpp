@@ -82,8 +82,38 @@ public:
     ///
     /// \return True if creation has been successful
     ///
+    /// \deprecated Use create(unsigned int, unsigned int, const ContextSettings&) instead.
+    ///
     ////////////////////////////////////////////////////////////
-    virtual bool create(unsigned int width, unsigned int height, bool depthBuffer = false);
+    SFML_DEPRECATED bool create(unsigned int width, unsigned int height, bool depthBuffer);
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Create the render-texture
+    ///
+    /// Before calling this function, the render-texture is in
+    /// an invalid state, thus it is mandatory to call it before
+    /// doing anything with the render-texture.
+    /// The last parameter, \a settings, is useful if you want to enable
+    /// multi-sampling or use the render-texture for OpenGL rendering that
+    /// requires a depth or stencil buffer. Otherwise it is unnecessary, and
+    /// you should leave this parameter at its default value.
+    ///
+    /// \param width    Width of the render-texture
+    /// \param height   Height of the render-texture
+    /// \param settings Additional settings for the underlying OpenGL texture and context
+    ///
+    /// \return True if creation has been successful
+    ///
+    ////////////////////////////////////////////////////////////
+    bool create(unsigned int width, unsigned int height, const ContextSettings& settings = ContextSettings());
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Get the maximum anti-aliasing level supported by the system
+    ///
+    /// \return The maximum anti-aliasing level supported by the system
+    ///
+    ////////////////////////////////////////////////////////////
+    static unsigned int getMaximumAntialiasingLevel();
 
     ////////////////////////////////////////////////////////////
     /// \brief Enable or disable texture smoothing
@@ -96,7 +126,7 @@ public:
     /// \see isSmooth
     ///
     ////////////////////////////////////////////////////////////
-    virtual void setSmooth(bool smooth);
+    void setSmooth(bool smooth);
 
     ////////////////////////////////////////////////////////////
     /// \brief Tell whether the smooth filtering is enabled or not
@@ -162,7 +192,7 @@ public:
     /// \return True if operation was successful, false otherwise
     ///
     ////////////////////////////////////////////////////////////
-    virtual bool setActive(bool active = true);
+    bool setActive(bool active = true);
 
     ////////////////////////////////////////////////////////////
     /// \brief Update the contents of the target texture
@@ -173,7 +203,7 @@ public:
     /// it may leave the texture in an undefined state.
     ///
     ////////////////////////////////////////////////////////////
-    virtual void display();
+    void display();
 
     ////////////////////////////////////////////////////////////
     /// \brief Return the size of the rendering region of the texture
@@ -200,7 +230,7 @@ public:
     /// \return Const reference to the texture
     ///
     ////////////////////////////////////////////////////////////
-    virtual const Texture& getTexture() const;
+    const Texture& getTexture() const;
 
 private:
 

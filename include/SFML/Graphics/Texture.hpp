@@ -46,7 +46,7 @@ class InputStream;
 ////////////////////////////////////////////////////////////
 class SFML_GRAPHICS_API Texture : GlResource
 {
-public :
+public:
 
     ////////////////////////////////////////////////////////////
     /// \brief Types of texture coordinates that can be used for rendering
@@ -58,7 +58,7 @@ public :
         Pixels      ///< Texture coordinates in range [0 .. size]
     };
 
-public :
+public:
 
     ////////////////////////////////////////////////////////////
     /// \brief Default constructor
@@ -388,18 +388,6 @@ public :
     void update(const Window& window, unsigned int x, unsigned int y);
 
     ////////////////////////////////////////////////////////////
-    /// \brief Update the texture from a part of the image
-    ///
-    /// This function does nothing if the texture was not
-    /// previously created.
-    ///
-    /// \param image Image to copy to the texture
-    /// \param area  Area of the image to copy to the texture
-    ///
-    ////////////////////////////////////////////////////////////
-    void update(const Image& image, const sf::IntRect& area);
-
-    ////////////////////////////////////////////////////////////
     /// \brief Enable or disable the smooth filter
     ///
     /// When the filter is activated, the texture appears smoother
@@ -594,8 +582,9 @@ public :
     ////////////////////////////////////////////////////////////
     static unsigned int getMaximumSize();
 
-private :
+private:
 
+    friend class Text;
     friend class FBOTargetImpl;
     friend class RenderTexture;
     friend class RenderTarget;
